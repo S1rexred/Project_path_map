@@ -10,8 +10,8 @@ const MapComponent = () => {
         console.log("Создание карты");
         window.ymaps.ready(() => {
             mapRef.current = new window.ymaps.Map(mapContainer.current, {
-                center: [55.751574, 37.573856], 
-                zoom: 9,
+                center: [46.200000, 48.000002], 
+                zoom: 12,
             });
         });
 
@@ -24,7 +24,7 @@ const MapComponent = () => {
         };
     }, []);
 
-    return <div ref={mapContainer} style={{ width: '100%', height: '400px' }} />;
+    return <div ref={mapContainer} style={{ width: '100%', height: '900px' }} />;
 };
 
 export default MapComponent;

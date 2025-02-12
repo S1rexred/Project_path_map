@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import MapComponent from './components/MapComponent';
+import UserLocation from './components/UserLocation';
 
-function App() {
+const App = () => {
+
+  const [map, setMap] = useState(null)
+  
   return (
     <div className="App">
       <h1>Приложение с картой</h1>
-      <MapComponent />
+      <MapComponent onMapReady = {setMap}/>
+      {map && <UserLocation map = {map}/>}
     </div>
   );
 }
