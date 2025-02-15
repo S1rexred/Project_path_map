@@ -1,30 +1,46 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
+import BuildRoute from '../routes/BuildRoute'
 
 const MapComponent = () => {
-    const mapRef = useRef(null);
-    const mapContainer = useRef(null);
+    const [map, setMap] = useState(null);
+    const [userCoords, setUserCoords] = useState(null);
 
     useEffect(() => {
-        if (!mapContainer.current || mapRef.current) return;
- 
-        console.log("Создание карты");
-        window.ymaps.ready(() => {
-            mapRef.current = new window.ymaps.Map(mapContainer.current, {
-                center: [46.200000, 48.000002], 
+        const script = document.createElement('script');
+        script.src = "https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=ТВОЙ_API_КЛЮЧ";
+        script.async = true;
+        script.onload = () => window.ymaps.ready(initMap);
+        document.head.appendChild(script);
+
+        const initMap = () => {
+            const newMap = new window.ymaps.Map('map', {
+                center: [46.200000, 48.000002],
                 zoom: 12,
             });
-        });
-
-        return () => {
-            if (mapRef.current) {
-                console.log("Уничтожение карты");
-                mapRef.current.destroy();
-                mapRef.current = null;
-            }
+            setMap(newMap);
         };
+
+        return () => document.head.removeChild(script);
     }, []);
 
-    return <div ref={mapContainer} style={{ width: '100%', height: '900px' }} />;
+    // Определяем местоположение пользователя
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const coords = [position.coords.latitude, position.coords.longitude];
+                setUserCoords(coords); // Сохраняем координаты пользователя
+                console.log('📍 Геопозиция получена:', coords);
+            });
+        }
+    }, []);
+
+    return (
+        <div>
+            <div id="map" style={{ width: '100%', height: '400px' }} />
+            {/* Показываем маршрут, если есть карта и геопозиция */}
+            {map && userCoords && <BuildRoute map={map} userCoords={userCoords} />}
+        </div>
+    );
 };
 
 export default MapComponent;
