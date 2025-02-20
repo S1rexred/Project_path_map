@@ -8,7 +8,7 @@ const UserLocation = ({ map }) => {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const userCoords = [position.coords.latitude, position.coords.longitude];
-                    console.log('Координаты пользователя:', userCoords); // ✅ Проверяем координаты
+                    console.log('Координаты пользователя:', userCoords);
 
                     map.setCenter(userCoords, 14);
 
@@ -20,7 +20,7 @@ const UserLocation = ({ map }) => {
                     });
 
                     map.geoObjects.add(userPlacemark);
-                    console.log('Метка добавлена на карту'); // ✅ Проверяем добавление метки
+                    console.log('Метка добавлена на карту');
                 },
                 (error) => console.error('Ошибка геолокации:', error)
             );
