@@ -3,10 +3,15 @@ export const SearchCafes = (userCoords, map, setCafeCoords) => {
 
     console.log("🔎 Ищем ближайшее кафе...");
 
+    map.controls.each((control) => {
+        if (control instanceof window.ymaps.control.SearchControl) {
+            map.controls.remove(control);
+        }
+    });
+    
     const searchControl = new window.ymaps.control.SearchControl({
         options: { 
-            provider: "yandex#search", 
-            kind: "cafe", 
+            provider: "yandex#search",
             results: 1,
             boundedBy: [
                 [userCoords[0] - 0.01, userCoords[1] - 0.01],
