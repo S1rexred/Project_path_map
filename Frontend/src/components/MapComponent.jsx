@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ymaps from 'ymaps';
 import BuildRoute from '../routes/BuildRoute';
 import { SearchCafes } from '../searchPlace/SearchCafes'
+import { BuildWalkingRoute } from '../routes/BuildRouteWalking';
 
 const MapComponent = () => {
     const [map, setMap] = useState(null);
@@ -75,9 +76,15 @@ const MapComponent = () => {
         }
     }, [map]);
 
+    useEffect(() => {
+        if (map && userCoords && cafeCoords && routeReady) {
+            BuildWalkingRoute(map, userCoords, cafeCoords)
+        }
+    }, [map, userCoords, cafeCoords, routeReady])
+
     const handleRouteReady = () => {
         setRouteReady(true)
-        console.log("новая позишин")
+        console.log("Маршрут готов к построению")
     }
 
     return (
@@ -90,7 +97,7 @@ const MapComponent = () => {
                 Построить новый маршрут
             </button>
             {map && userCoords && cafeCoords && routeReady && (
-                <BuildRoute map={map} userCoords={userCoords} cafeCoords={cafeCoords} />
+                <BuildWalkingRoute map={map} userCoords={userCoords} cafeCoords={cafeCoords} />
             )}
         </div>
     );
