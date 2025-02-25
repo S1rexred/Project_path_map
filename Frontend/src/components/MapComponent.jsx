@@ -21,7 +21,7 @@ const MapComponent = () => {
             .then((ymapsInstance) => {
                 const newMap = new ymapsInstance.Map("map", {
                     center: [46.200000, 48.000002],
-                    zoom: 12,
+                    zoom: 16,
                 });
 
                 newMap.events.add('boundsChange', () => {
@@ -82,6 +82,27 @@ const MapComponent = () => {
         }
     }, [map, userCoords, cafeCoords, routeReady])
 
+    useEffect(() => {
+        if (!map || "geolocation" in navigator) return
+
+        const watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const newCoords = [position.coords.latitude, position.coords.longitude]
+                setUserCoords(newCoords)
+
+                if (userPlacemark) {
+                    userPlacemark.geometry.setCoordinates(newCoords)
+                }
+
+                console.log('Пользователь движется')
+            },
+            (error) => console.log('Ошибка получения геопозиции', error),
+            { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000}
+        )
+
+        return () => navigator.geolocation.clearWatch(watchId)
+    }, [map, userPlacemark])
+
     const handleRouteReady = () => {
         setRouteReady(true)
         console.log("Маршрут готов к построению")
@@ -97,7 +118,7 @@ const MapComponent = () => {
                 Построить новый маршрут
             </button>
             {map && userCoords && cafeCoords && routeReady && (
-                <BuildWalkingRoute map={map} userCoords={userCoords} cafeCoords={cafeCoords} />
+                <BuildWalkingRoute map={map} userCoords={userCoords} cafeCoords={cafeCoords} userPlacemark={userPlacemark}/>
             )}
         </div>
     );
