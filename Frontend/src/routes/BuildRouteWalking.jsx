@@ -1,4 +1,4 @@
-export const BuildWalkingRoute = (map, userCoords, cafeCoords, userPlacemark) => {
+export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, userPlacemark) => {
     if (!map || !userCoords || !cafeCoords) return;
 
     ymaps.load().then((ymapsInstance) => {
@@ -7,7 +7,7 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, userPlacemark) =>
         // маршрут
         const multiRoute = new ymapsInstance.multiRouter.MultiRoute(
             {
-                referencePoints: [userCoords, cafeCoords],
+                referencePoints: [userCoords, cafeCoords, parkCoords],
                 params: { routingMode: "pedestrian" }
             },
             {
@@ -29,7 +29,7 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, userPlacemark) =>
                 if (distance > 10) {
                     console.log("Перестраиваем маршрут, пользователь сдвинулся:", newCoords);
                     userCoords = newCoords;
-                    multiRoute.model.setReferencePoints([newCoords, cafeCoords]);
+                    multiRoute.model.setReferencePoints([newCoords, cafeCoords, parkCoords]);
                 }
 
                 // Обновляем метку пользователя
