@@ -48,7 +48,7 @@ const MapComponent = () => {
 
         SearchCafes(coords, map, (newCafeCoords) => {
             setCafeCoords(newCafeCoords);
-            
+           
             // Теперь ищем парк после поиска кафе
             SearchParks(newCafeCoords, map, (newParkCoords) => {
                 setParkCoords(newParkCoords);
@@ -60,66 +60,91 @@ const MapComponent = () => {
     // 🔄 Обновление местоположения пользователя и поиск кафе/парка
     useEffect(() => {
         if (map && "geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const coords = [position.coords.latitude, position.coords.longitude];
-                setUserCoords(coords);
-                console.log("📍 Геопозиция получена:", coords);
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = [position.coords.latitude, position.coords.longitude];
+                    setUserCoords(coords);
+                    console.log("📍 Геопозиция получена:", coords);
 
-                ymaps.load().then((ymapsInstance) => {
-                    if (userPlacemark) {
-                        map.geoObjects.remove(userPlacemark);
-                    }
+                    ymaps.load().then((ymapsInstance) => {
+                        if (userPlacemark) {
+                            map.geoObjects.remove(userPlacemark);
+                        }
 
-                    const placemark = new ymapsInstance.Placemark(
-                        coords,
-                        { balloonContent: "Вы здесь!" },
-                        { draggable: true }
-                    );
+                        const placemark = new ymapsInstance.Placemark(
+                            coords,
+                            { balloonContent: "Вы здесь!" },
+                            { draggable: true }
+                        );
 
-                    placemark.events.add("dragend", function () {
-                        const newCoords = placemark.geometry.getCoordinates();
-                        setUserCoords(newCoords);
-                        setManualMove(true);
-                        searchNearestCafe(newCoords, map);
+                        placemark.events.add("dragend", function () {
+                            const newCoords = placemark.geometry.getCoordinates();
+                            setUserCoords(newCoords);
+                            setManualMove(true);
+                            searchNearestCafe(newCoords, map);
+                        });
+
+                        map.geoObjects.add(placemark);
+                        setUserPlacemark(placemark);
+
+                        if (isFirstLoad) {
+                            map.setCenter(coords, 15);
+                            setIsFirstLoad(false);
+                        }
+
+                        searchNearestCafe(coords, map);
                     });
-
-                    map.geoObjects.add(placemark);
-                    setUserPlacemark(placemark);
-
-                    if (isFirstLoad) {
-                        map.setCenter(coords, 15);
-                        setIsFirstLoad(false);
-                    }
-
-                    searchNearestCafe(coords, map);
-                });
-            });
+                },
+                (error) => console.log("⚠️ Ошибка получения геопозиции:", error),
+                { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
+            );
         }
     }, [map]);
 
     // 🔄 Автоматическое обновление метки при движении пользователя
     useEffect(() => {
         if (!map || !userPlacemark || !"geolocation" in navigator) return;
-
+    
         const watchId = navigator.geolocation.watchPosition(
             (position) => {
-                if (manualMove) return; // Если пользователь двигал вручную — не обновляем
                 const newCoords = [position.coords.latitude, position.coords.longitude];
-
+    
+                if (JSON.stringify(newCoords) === JSON.stringify(userCoords)) return;
+    
+                console.log("📍 Пользователь движется:", newCoords);
                 setUserCoords(newCoords);
+    
                 if (userPlacemark) {
                     userPlacemark.geometry.setCoordinates(newCoords);
                 }
-
-                console.log("📍 Пользователь движется:", newCoords);
+    
                 searchNearestCafe(newCoords, map);
             },
-            (error) => console.log("⚠️ Ошибка получения геопозиции:", error),
-            { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
-        );
+            (error) => {
+                console.warn('ошибка обновлении координат', error.message)
 
+                if (error.code === 3) {
+                    console.log('таймуат прошел... Пробуем снова')
+
+                    setTimeout(() => {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const newCoords = [position.coords.latitude, position.coords.longitude]
+                                console.log('кешир координаты')
+                                setUserCoords(newCoords)
+                            },
+                            (err) => console.log('опять не удалось получить (таймаут)', err.message),
+                            { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
+                        )
+                    }, 5000);
+                }
+            },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000}
+        );
+    
         return () => navigator.geolocation.clearWatch(watchId);
-    }, [map, userPlacemark, manualMove]);
+    }, [map, userPlacemark, userCoords]);
+    
 
     // 🚀 Построение маршрута к кафе и парку
     useEffect(() => {
