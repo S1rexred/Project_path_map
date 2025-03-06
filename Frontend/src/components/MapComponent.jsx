@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from "react";
 import ymaps from "ymaps";
 import BuildRoute from "../routes/BuildRoute";
-import { SearchCafes } from "../searchPlace/SearchCafes";
 import { BuildWalkingRoute } from "../routes/BuildRouteWalking";
+import { SearchCafes } from "../searchPlace/SearchCafes";
 import { SearchParks } from "../searchPlace/SearchParks";
+import { SearchAttractions } from "../searchPlace/SearchAttractions";
+import { FindOptimalRoute } from '../algoritms/FindOptimalRoute'
 
 const MapComponent = () => {
     const [map, setMap] = useState(null);
     const [userCoords, setUserCoords] = useState(null);
     const [cafeCoords, setCafeCoords] = useState(null);
     const [parkCoords, setParkCoords] = useState(null);
+    const [attractionsCoords, setAttractionsCoords] = useState(null);
     const [userPlacemark, setUserPlacemark] = useState(null);
     const [isFirstLoad, setIsFirstLoad] = useState(true);
     const [routeReady, setRouteReady] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
-    const [manualMove, setManualMove] = useState(false);
+    const [firstLocationUpdate, setFirstLocationUpdate] = useState(true);
+    const [hasCenteredMap, setHasCenteredMap] = useState(false)
 
     useEffect(() => {
-        if (map) return;
+        if (map !== null) return;
 
         console.log("🌍 Создается карта...");
         ymaps
@@ -30,18 +34,12 @@ const MapComponent = () => {
                     zoom: 16,
                 });
 
-                newMap.events.add("boundsChange", () => {
-                    const newCenter = newMap.getCenter();
-                    console.log("📌 Центр карты изменился:", newCenter);
-                    searchNearestCafe(newCenter, newMap);
-                });
-
                 setMap(newMap);
             })
             .catch((err) => console.error("❌ Ошибка загрузки Яндекс.Карт:", err));
     }, []);
 
-    // 🔍 Функция поиска ближайшего кафе и парка
+    // 🔍 Функция поиска ближайшего кафе/парка/достоприм.
     const searchNearestCafe = (coords, map) => {
         if (isSearching) return;
         setIsSearching(true);
@@ -49,15 +47,18 @@ const MapComponent = () => {
         SearchCafes(coords, map, (newCafeCoords) => {
             setCafeCoords(newCafeCoords);
            
-            // Теперь ищем парк после поиска кафе
             SearchParks(newCafeCoords, map, (newParkCoords) => {
                 setParkCoords(newParkCoords);
-                setIsSearching(false);
+                
+                SearchAttractions(newParkCoords, map, (newAttractionsCoords) => {
+                    setAttractionsCoords(newAttractionsCoords)
+                    setIsSearching(false);
+                })
             });
         });
     };
 
-    // 🔄 Обновление местоположения пользователя и поиск кафе/парка
+    // 🔄 Обновление местоположения пользователя
     useEffect(() => {
         if (map && "geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -80,19 +81,18 @@ const MapComponent = () => {
                         placemark.events.add("dragend", function () {
                             const newCoords = placemark.geometry.getCoordinates();
                             setUserCoords(newCoords);
-                            setManualMove(true);
-                            searchNearestCafe(newCoords, map);
+                            FindOptimalRoute(newCoords, map);
                         });
 
                         map.geoObjects.add(placemark);
                         setUserPlacemark(placemark);
 
-                        if (isFirstLoad) {
-                            map.setCenter(coords, 15);
-                            setIsFirstLoad(false);
+                        if (!hasCenteredMap && userCoords) {
+                            map.setCenter(coords, 15)
+                            setHasCenteredMap(true)
                         }
 
-                        searchNearestCafe(coords, map);
+                        FindOptimalRoute(coords, map);
                     });
                 },
                 (error) => console.log("⚠️ Ошибка получения геопозиции:", error),
@@ -104,57 +104,56 @@ const MapComponent = () => {
     // 🔄 Автоматическое обновление метки при движении пользователя
     useEffect(() => {
         if (!map || !userPlacemark || !"geolocation" in navigator) return;
-    
+   
         const watchId = navigator.geolocation.watchPosition(
             (position) => {
                 const newCoords = [position.coords.latitude, position.coords.longitude];
-    
+
                 if (JSON.stringify(newCoords) === JSON.stringify(userCoords)) return;
-    
+
                 console.log("📍 Пользователь движется:", newCoords);
                 setUserCoords(newCoords);
-    
+
                 if (userPlacemark) {
                     userPlacemark.geometry.setCoordinates(newCoords);
                 }
-    
-                searchNearestCafe(newCoords, map);
+
+                FindOptimalRoute(newCoords, map);
             },
             (error) => {
-                console.warn('ошибка обновлении координат', error.message)
+                console.warn("Ошибка обновления координат", error.message);
 
                 if (error.code === 3) {
-                    console.log('таймуат прошел... Пробуем снова')
+                    console.log("Таймаут прошел... Пробуем снова");
 
                     setTimeout(() => {
                         navigator.geolocation.getCurrentPosition(
                             (position) => {
-                                const newCoords = [position.coords.latitude, position.coords.longitude]
-                                console.log('кешир координаты')
-                                setUserCoords(newCoords)
+                                const newCoords = [position.coords.latitude, position.coords.longitude];
+                                console.log("Кешир координаты");
+                                setUserCoords(newCoords);
                             },
-                            (err) => console.log('опять не удалось получить (таймаут)', err.message),
+                            (err) => console.log("Опять не удалось получить (таймаут)", err.message),
                             { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
-                        )
+                        );
                     }, 5000);
                 }
             },
-            { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000}
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
         );
-    
+   
         return () => navigator.geolocation.clearWatch(watchId);
     }, [map, userPlacemark, userCoords]);
-    
-
-    // 🚀 Построение маршрута к кафе и парку
+   
+    // 🚀 Построение маршрута
     useEffect(() => {
-        if (map && userCoords && cafeCoords && parkCoords && routeReady) {
-            console.log("🛤️ Строим маршрут к кафе:", cafeCoords, "и парку:", parkCoords);
-            BuildWalkingRoute(map, userCoords, cafeCoords, parkCoords);
+        if (map && userCoords && cafeCoords && parkCoords && attractionsCoords && routeReady) {
+            console.log("🛤️ Строим маршрут к кафе:", cafeCoords, "и к парку:", parkCoords, "и к достопримечательности", attractionsCoords);
+            BuildWalkingRoute(map, userCoords, cafeCoords, parkCoords, attractionsCoords);
         }
-    }, [map, userCoords, cafeCoords, parkCoords, routeReady]);
+    }, [map, userCoords, cafeCoords, parkCoords, attractionsCoords, routeReady]);
 
-    // 🔘 Нажатие кнопки "Построить маршрут"
+    // 🔘 Кнопка "Построить маршрут"
     const handleRouteReady = () => {
         setRouteReady(true);
     };
@@ -164,7 +163,12 @@ const MapComponent = () => {
             <div id="map" style={{ width: "100%", height: "400px" }} />
             <button
                 onClick={handleRouteReady}
-                style={{ marginTop: "10px", cursor: "pointer", padding: "10px" }}
+                disabled = {routeReady}
+                style = {{
+                    marginTop: '10px',
+                    cursor: routeReady ? 'not-allowed' : 'pointer',
+                    padding: "10px"
+                }}
             >
                 Построить маршрут
             </button>

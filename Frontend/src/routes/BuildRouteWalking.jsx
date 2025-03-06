@@ -1,4 +1,4 @@
-export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, userPlacemark) => {
+export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, attractionsCoords, userPlacemark) => {
     if (!map || !userCoords || !cafeCoords) return;
 
     ymaps.load().then((ymapsInstance) => {
@@ -7,7 +7,7 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, userP
         // маршрут
         const multiRoute = new ymapsInstance.multiRouter.MultiRoute(
             {
-                referencePoints: [userCoords, cafeCoords, parkCoords],
+                referencePoints: [userCoords, cafeCoords, parkCoords, attractionsCoords],
                 params: { routingMode: "pedestrian" }
             },
             {
@@ -29,7 +29,7 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, userP
                 if (distance > 10) {
                     console.log("Перестраиваем маршрут, пользователь сдвинулся:", newCoords);
                     userCoords = newCoords;
-                    multiRoute.model.setReferencePoints([newCoords, cafeCoords, parkCoords]);
+                    multiRoute.model.setReferencePoints([newCoords, cafeCoords, parkCoords, attractionsCoords]);
                 }
 
                 // Обновляем метку пользователя
@@ -38,7 +38,7 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, userP
                 }
             },
             (error) => console.error("Ошибка обновления координат:", error),
-            { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+            { enableHighAccuracy: true, maximumAge: 20000, timeout: 20000 }
         );
     });
 }
