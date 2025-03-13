@@ -1,40 +1,47 @@
-export const SearchAttractions = (userCoords, map, setAttractionsCoords) => {
-    if (!userCoords || !map) return;
+export const SearchAttractions = async (userCoords, map, setCafeCoords) => {
+    if (!userCoords || !map) {
+        console.warn("⚠️ Не переданы координаты или карта!");
+        return null;
+    }
 
-    console.log("🔎 Ищем ближайшую достопримечательность...");
+    console.log("🔎 Ищем ближайшую достопримечательность");
 
+    // Удаляем старые поисковые контролы, если есть
     map.controls.each((control) => {
         if (control instanceof window.ymaps.control.SearchControl) {
             map.controls.remove(control);
         }
     });
-    
+
     const searchControl = new window.ymaps.control.SearchControl({
-        options: { 
+        options: {
             provider: "yandex#search",
             results: 1,
             boundedBy: [
                 [userCoords[0] - 0.01, userCoords[1] - 0.01],
                 [userCoords[0] + 0.01, userCoords[1] + 0.01]
             ]
-        },
+        }
     });
 
     map.controls.add(searchControl);
 
-    searchControl.search("достопримечательность").then(() => {
+    try {
+        await searchControl.search("достопримечательность");
         const results = searchControl.getResultsArray();
+
         if (!results || results.length === 0) {
-            console.warn("❌ Достопримечательность не найдено!");
-            return;
+            console.warn("❌ Достопримечательность не найдена!");
+            return null;
         }
 
-        const nearestAttractionsCoordsCoords = results[0].geometry.getCoordinates();
+        const nearestCafeCoords = results[0].geometry.getCoordinates();
+        console.log("✅ Найдена ближайшая достопримечательность", nearestCafeCoords);
 
-        console.log("✅ Найдена ближайшая достопримечательность", nearestAttractionsCoordsCoords);
-        setAttractionsCoords(nearestAttractionsCoordsCoords);
-    })
-    .catch((error) => {
-        console.error('Ошибка при поиске достопримечательности', error)
-    })
+        setCafeCoords(nearestCafeCoords);
+        return nearestCafeCoords;
+    } catch (error) {
+        console.error("❌ Ошибка при поиске достопримечательности", error);
+        return null;
+    }
 };

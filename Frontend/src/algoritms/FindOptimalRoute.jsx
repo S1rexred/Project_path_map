@@ -1,101 +1,132 @@
-import { SearchCafes } from "../searchPlace/SearchCafes";
-import { SearchParks } from "../searchPlace/SearchParks";
-import { SearchAttractions } from "../searchPlace/SearchAttractions";
+import ymaps from "ymaps";
+/**
+* @param {Array} a - Координаты первой точки [lat, lon].
+* @param {Array} b - Координаты второй точки [lat, lon].
+* @returns {number} - Расстояние между точками.
+*/
 
-export const FindOptimalRoute = (userCoords, map, setCafeCoords, setParkCoords, setAttractionsCoords) => {
-    if (!userCoords || !map) return;
-
-    console.log("🚀 Начинаем поиск оптимального маршрута...");
-
-    Promise.all([
-        new Promise((resolve, reject) => {
-            console.log("🔍 Запускаем поиск кафе...");
-            try {
-                SearchCafes(userCoords, map, (cafes) => {
-                    console.log("✅ Найденные кафе:", cafes);
-                    if (!cafes || cafes.length === 0) {
-                        console.warn("❌ Кафе не найдены!");
-                        reject("Кафе не найдены");
-                        return;
-                    }
-                    resolve(cafes);
-                });
-            } catch (error) {
-                console.error("❌ Ошибка в SearchCafes:", error);
-                reject(error);
-            }
-        }),
-        new Promise((resolve, reject) => {
-            console.log("🔍 Запускаем поиск парков...");
-            try {
-                SearchParks(userCoords, map, (parks) => {
-                    console.log("✅ Найденные парки:", parks);
-                    if (!parks || parks.length === 0) {
-                        console.warn("❌ Парки не найдены!");
-                        reject("Парки не найдены");
-                        return;
-                    }
-                    resolve(parks);
-                });
-            } catch (error) {
-                console.error("❌ Ошибка в SearchParks:", error);
-                reject(error);
-            }
-        })
-    ])
-    .then(([foundCafes, foundParks]) => {
-        console.log("🔎 Начинаем анализ маршрута...");
-        let bestCafe = null;
-        let bestPark = null;
-        let minDistance = Infinity;
-
-        foundCafes.forEach((cafe) => {
-            foundParks.forEach((park) => {
-                const distance = calculateDistance(cafe, park);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    bestCafe = cafe;
-                    bestPark = park;
-                }
-            });
-        });
-
-        if (bestCafe && bestPark) {
-            console.log(`✅ Выбрано кафе: ${JSON.stringify(bestCafe)}, парк: ${JSON.stringify(bestPark)}`);
-            setCafeCoords(bestCafe);
-            setParkCoords(bestPark);
-
-            SearchAttractions(bestPark, map, (attraction) => {
-                if (attraction) {
-                    console.log(`🏛️ Выбрана достопримечательность: ${JSON.stringify(attraction)}`);
-                    setAttractionsCoords(attraction);
-                } else {
-                    console.warn("❌ Достопримечательности не найдены!");
-                }
-            });
-        } else {
-            console.warn("⚠️ Не удалось выбрать оптимальное кафе и парк!");
-        }
-    })
-    .catch((error) => console.error("❌ Ошибка при поиске кафе или парков:", error));
+const getDistance = (a, b) => {
+   return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
 };
 
 /**
- * Функция расчета расстояния между двумя точками (по формуле Хаверсина)
- */
-const calculateDistance = (point1, point2) => {
-    const toRad = (deg) => deg * (Math.PI / 180);
-    const R = 6371; // Радиус Земли в км
+* Генерация матрицы расстояний между всеми точками.
+* @param {Array} places - Массив координат точек [[lat, lon], ...].
+* @returns {Array} - Матрица расстояний.
+*/
+const generateDistanceMatrix = (places) => {
+   const n = places.length;
+   const matrix = Array.from({ length: n }, () => Array(n).fill(0));
 
-    const dLat = toRad(point2[0] - point1[0]);
-    const dLon = toRad(point2[1] - point1[1]);
-
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(point1[0])) * Math.cos(toRad(point2[0])) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // Возвращает расстояние в км
+   for (let i = 0; i < n; i++) {
+       for (let j = 0; j < n; j++) {
+           if (i !== j) {
+               matrix[i][j] = getDistance(places[i], places[j]);
+           }
+       }
+   }
+   return matrix;
 };
+
+/**
+* Муравьиный алгоритм для поиска оптимального маршрута.
+* @param {Array} places - Массив координат мест [[lat, lon], ...].
+* @param {number} ants - Количество муравьев.
+* @param {number} iterations - Количество итераций.
+* @param {number} alpha - Влияние феромонов.
+* @param {number} beta - Влияние расстояния.
+* @param {number} evaporation - Коэффициент испарения феромонов.
+* @returns {Array} - Оптимальный маршрут.
+*/
+const antColonyOptimization = (places, ants = 10, iterations = 100, alpha = 1, beta = 2, evaporation = 0.5) => {
+   const n = places.length;
+   const distanceMatrix = generateDistanceMatrix(places);
+   
+   // Инициализация феромонов (начальное значение 1)
+   let pheromones = Array.from({ length: n }, () => Array(n).fill(1));
+
+   let bestRoute = [];
+   let bestDistance = Infinity;
+
+   for (let iter = 0; iter < iterations; iter++) {
+       let allRoutes = [];
+       let allDistances = [];
+
+       for (let ant = 0; ant < ants; ant++) {
+           let visited = new Set();
+           let route = [0]; // Начинаем с первой точки
+           visited.add(0);
+           let current = 0;
+           let distance = 0;
+
+           while (route.length < n) {
+               let probabilities = [];
+               let sum = 0;
+
+               // Рассчитываем вероятности перехода
+               for (let j = 0; j < n; j++) {
+                   if (!visited.has(j)) {
+                       let pheromone = Math.pow(pheromones[current][j], alpha);
+                       let visibility = Math.pow(1 / distanceMatrix[current][j], beta);
+                       let probability = pheromone * visibility;
+                       probabilities.push({ index: j, probability });
+                       sum += probability;
+                   }
+               }
+
+               // Выбираем следующую точку
+               let r = Math.random() * sum;
+               let cumulative = 0;
+               let next = -1;
+               for (let option of probabilities) {
+                   cumulative += option.probability;
+                   if (cumulative >= r) {
+                       next = option.index;
+                       break;
+                   }
+               }
+
+               if (next !== -1) {
+                   visited.add(next);
+                   route.push(next);
+                   distance += distanceMatrix[current][next];
+                   current = next;
+               }
+           }
+
+           distance += distanceMatrix[current][0]; // Возвращаемся в начальную точку
+           route.push(0);
+           allRoutes.push(route);
+           allDistances.push(distance);
+
+           if (distance < bestDistance) {
+               bestDistance = distance;
+               bestRoute = route;
+           }
+       }
+
+       // Обновление феромонов
+       for (let i = 0; i < n; i++) {
+           for (let j = 0; j < n; j++) {
+               pheromones[i][j] *= (1 - evaporation);
+           }
+       }
+
+       for (let i = 0; i < allRoutes.length; i++) {
+           let route = allRoutes[i];
+           let routeDistance = allDistances[i];
+           let pheromoneDeposit = 1 / routeDistance;
+
+           for (let j = 0; j < route.length - 1; j++) {
+               let from = route[j];
+               let to = route[j + 1];
+               pheromones[from][to] += pheromoneDeposit;
+               pheromones[to][from] += pheromoneDeposit;
+           }
+       }
+   }
+
+   return bestRoute.map(index => places[index]);
+};
+
+

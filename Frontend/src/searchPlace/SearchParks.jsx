@@ -1,40 +1,47 @@
-export const SearchParks = (userCoords, map, setParkCoords) => {
-    if (!userCoords || !map) return;
+export const SearchParks = async (userCoords, map, setCafeCoords) => {
+    if (!userCoords || !map) {
+        console.warn("⚠️ Не переданы координаты или карта!");
+        return null;
+    }
 
-    console.log("🔎 Ищем ближайший парк..");
+    console.log("🔎 Ищем ближайший парка");
 
+    // Удаляем старые поисковые контролы, если есть
     map.controls.each((control) => {
         if (control instanceof window.ymaps.control.SearchControl) {
             map.controls.remove(control);
         }
     });
-    
+
     const searchControl = new window.ymaps.control.SearchControl({
-        options: { 
+        options: {
             provider: "yandex#search",
             results: 1,
             boundedBy: [
                 [userCoords[0] - 0.01, userCoords[1] - 0.01],
                 [userCoords[0] + 0.01, userCoords[1] + 0.01]
             ]
-        },
+        }
     });
 
     map.controls.add(searchControl);
 
-    searchControl.search("парк").then(() => {
+    try {
+        await searchControl.search("парк");
         const results = searchControl.getResultsArray();
+
         if (!results || results.length === 0) {
-            console.warn("❌ Парк не найдено!");
-            return;
+            console.warn("❌ Парк не найдена!");
+            return null;
         }
 
-        const nearestParkCoords = results[0].geometry.getCoordinates();
+        const nearestCafeCoords = results[0].geometry.getCoordinates();
+        console.log("✅ Найден ближайший парк:", nearestCafeCoords);
 
-        console.log("✅ Найден ближайший парк", nearestParkCoords);
-        setParkCoords(nearestParkCoords);
-    })
-    .catch((error) => {
-        console.error('Ошибка при поиске парка', error)
-    })
+        setCafeCoords(nearestCafeCoords);
+        return nearestCafeCoords;
+    } catch (error) {
+        console.error("❌ Ошибка при поиске парка:", error);
+        return null;
+    }
 };

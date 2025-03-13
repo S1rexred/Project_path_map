@@ -6,6 +6,7 @@ import { SearchCafes } from "../searchPlace/SearchCafes";
 import { SearchParks } from "../searchPlace/SearchParks";
 import { SearchAttractions } from "../searchPlace/SearchAttractions";
 import { FindOptimalRoute } from '../algoritms/FindOptimalRoute'
+import { searchNearestPlaces } from "../searchPlace/SearchPlaces";
 
 const MapComponent = () => {
     const [map, setMap] = useState(null);
@@ -40,23 +41,23 @@ const MapComponent = () => {
     }, []);
 
     // 🔍 Функция поиска ближайшего кафе/парка/достоприм.
-    const searchNearestCafe = (coords, map) => {
-        if (isSearching) return;
-        setIsSearching(true);
+    // const searchNearestCafe = (coords, map) => {
+    //     if (isSearching) return;
+    //     setIsSearching(true);
 
-        SearchCafes(coords, map, (newCafeCoords) => {
-            setCafeCoords(newCafeCoords);
+    //     SearchCafes(coords, map, (newCafeCoords) => {
+    //         setCafeCoords(newCafeCoords);
            
-            SearchParks(newCafeCoords, map, (newParkCoords) => {
-                setParkCoords(newParkCoords);
+    //         SearchParks(newCafeCoords, map, (newParkCoords) => {
+    //             setParkCoords(newParkCoords);
                 
-                SearchAttractions(newParkCoords, map, (newAttractionsCoords) => {
-                    setAttractionsCoords(newAttractionsCoords)
-                    setIsSearching(false);
-                })
-            });
-        });
-    };
+    //             SearchAttractions(newParkCoords, map, (newAttractionsCoords) => {
+    //                 setAttractionsCoords(newAttractionsCoords)
+    //                 setIsSearching(false);
+    //             })
+    //         });
+    //     });
+    // };
 
     // 🔄 Обновление местоположения пользователя
     useEffect(() => {
@@ -66,6 +67,7 @@ const MapComponent = () => {
                     const coords = [position.coords.latitude, position.coords.longitude];
                     setUserCoords(coords);
                     console.log("📍 Геопозиция получена:", coords);
+                    searchNearestPlaces(coords, map, setIsSearching, FindOptimalRoute, setCafeCoords, setParkCoords, setAttractionsCoords);
 
                     ymaps.load().then((ymapsInstance) => {
                         if (userPlacemark) {

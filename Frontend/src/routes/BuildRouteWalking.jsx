@@ -38,7 +38,7 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, attra
                 }
             },
             (error) => console.error("Ошибка обновления координат:", error),
-            { enableHighAccuracy: true, maximumAge: 20000, timeout: 20000 }
+            { enableHighAccuracy: true, maximumAge: 30000, timeout: 30000 }
         );
     });
 }
