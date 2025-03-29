@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import MapComponent from './components/MapComponent';
 import UserLocation from './components/UserLocation';
-
+import './index.css'
 const App = () => {
 
   const [map, setMap] = useState(null)

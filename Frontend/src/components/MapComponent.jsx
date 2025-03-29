@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
 import ymaps from "ymaps";
-import BuildRoute from "../routes/BuildRoute";
 import { BuildWalkingRoute } from "../routes/BuildRouteWalking";
-import { SearchCafes } from "../searchPlace/SearchCafes";
-import { SearchParks } from "../searchPlace/SearchParks";
-import { SearchAttractions } from "../searchPlace/SearchAttractions";
-import { FindOptimalRoute } from '../algoritms/FindOptimalRoute'
-import { searchNearestPlaces } from "../searchPlace/SearchPlaces";
+import { FindOptimalRoute } from '../algoritms/FindOptimalRoute';
+import { searchNearestPlaces } from "../searchPlace/SearchNearestPlace";
+import OriginalTest from "../algoritms/tests/OriginalTest";
 
 const MapComponent = () => {
     const [map, setMap] = useState(null);
@@ -15,11 +12,11 @@ const MapComponent = () => {
     const [parkCoords, setParkCoords] = useState(null);
     const [attractionsCoords, setAttractionsCoords] = useState(null);
     const [userPlacemark, setUserPlacemark] = useState(null);
-    const [isFirstLoad, setIsFirstLoad] = useState(true);
     const [routeReady, setRouteReady] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
-    const [firstLocationUpdate, setFirstLocationUpdate] = useState(true);
-    const [hasCenteredMap, setHasCenteredMap] = useState(false)
+    const [hasCenteredMap, setHasCenteredMap] = useState(false);
+    const [watchId, setWatchId] = useState(null); // ID отслеживания геопозиции
+    const [isTestOpen, setIstestOpen] = useState(false)
 
     useEffect(() => {
         if (map !== null) return;
@@ -27,7 +24,7 @@ const MapComponent = () => {
         console.log("🌍 Создается карта...");
         ymaps
             .load(
-                "https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=3e97ca53-6fe6-4f83-92e8-625dc2b8f2c4"
+                "https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=3e97ca53-6fe6-4f83-92e8-625dc2b8f2c4",
             )
             .then((ymapsInstance) => {
                 const newMap = new ymapsInstance.Map("map", {
@@ -38,115 +35,55 @@ const MapComponent = () => {
                 setMap(newMap);
             })
             .catch((err) => console.error("❌ Ошибка загрузки Яндекс.Карт:", err));
+
     }, []);
 
-    // 🔍 Функция поиска ближайшего кафе/парка/достоприм.
-    // const searchNearestCafe = (coords, map) => {
-    //     if (isSearching) return;
-    //     setIsSearching(true);
-
-    //     SearchCafes(coords, map, (newCafeCoords) => {
-    //         setCafeCoords(newCafeCoords);
-           
-    //         SearchParks(newCafeCoords, map, (newParkCoords) => {
-    //             setParkCoords(newParkCoords);
-                
-    //             SearchAttractions(newParkCoords, map, (newAttractionsCoords) => {
-    //                 setAttractionsCoords(newAttractionsCoords)
-    //                 setIsSearching(false);
-    //             })
-    //         });
-    //     });
-    // };
-
-    // 🔄 Обновление местоположения пользователя
+    // 🔄 Обновление местоположения пользователя (до нажатия кнопки "Построить маршрут")
     useEffect(() => {
-        if (map && "geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const coords = [position.coords.latitude, position.coords.longitude];
-                    setUserCoords(coords);
-                    console.log("📍 Геопозиция получена:", coords);
-                    searchNearestPlaces(coords, map, setIsSearching, FindOptimalRoute, setCafeCoords, setParkCoords, setAttractionsCoords);
-
-                    ymaps.load().then((ymapsInstance) => {
-                        if (userPlacemark) {
-                            map.geoObjects.remove(userPlacemark);
-                        }
-
-                        const placemark = new ymapsInstance.Placemark(
-                            coords,
-                            { balloonContent: "Вы здесь!" },
-                            { draggable: true }
-                        );
-
-                        placemark.events.add("dragend", function () {
-                            const newCoords = placemark.geometry.getCoordinates();
-                            setUserCoords(newCoords);
-                            FindOptimalRoute(newCoords, map);
-                        });
-
-                        map.geoObjects.add(placemark);
-                        setUserPlacemark(placemark);
-
-                        if (!hasCenteredMap && userCoords) {
-                            map.setCenter(coords, 15)
-                            setHasCenteredMap(true)
-                        }
-
-                        FindOptimalRoute(coords, map);
-                    });
-                },
-                (error) => console.log("⚠️ Ошибка получения геопозиции:", error),
-                { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
-            );
-        }
-    }, [map]);
-
-    // 🔄 Автоматическое обновление метки при движении пользователя
-    useEffect(() => {
-        if (!map || !userPlacemark || !"geolocation" in navigator) return;
-   
-        const watchId = navigator.geolocation.watchPosition(
+        if (!map || !"geolocation" in navigator || routeReady) return;
+    
+        const id = navigator.geolocation.watchPosition(
             (position) => {
-                const newCoords = [position.coords.latitude, position.coords.longitude];
-
-                if (JSON.stringify(newCoords) === JSON.stringify(userCoords)) return;
-
-                console.log("📍 Пользователь движется:", newCoords);
-                setUserCoords(newCoords);
-
-                if (userPlacemark) {
-                    userPlacemark.geometry.setCoordinates(newCoords);
-                }
-
-                FindOptimalRoute(newCoords, map);
+                const coords = [position.coords.latitude, position.coords.longitude];
+                setUserCoords(coords);
+                console.log("📍 Геопозиция обновлена:", coords);
+    
+                ymaps.load().then((ymapsInstance) => {
+                    if (!userPlacemark) {
+                        map.geoObjects.remove(userPlacemark);
+                    
+    
+                    const placemark = new ymapsInstance.Placemark(
+                        coords,
+                        { balloonContent: "Вы здесь!" }
+                    );
+    
+                    map.geoObjects.add(placemark);
+                    setUserPlacemark(placemark);
+                    } else {
+                        userPlacemark.geometry.setCoordinates(coords)
+                    }
+                    if (!hasCenteredMap) {
+                        map.setCenter(coords, 15);
+                        setHasCenteredMap(true);
+                    }
+                });
             },
-            (error) => {
-                console.warn("Ошибка обновления координат", error.message);
-
-                if (error.code === 3) {
-                    console.log("Таймаут прошел... Пробуем снова");
-
-                    setTimeout(() => {
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                const newCoords = [position.coords.latitude, position.coords.longitude];
-                                console.log("Кешир координаты");
-                                setUserCoords(newCoords);
-                            },
-                            (err) => console.log("Опять не удалось получить (таймаут)", err.message),
-                            { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
-                        );
-                    }, 5000);
-                }
-            },
-            { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
+            (error) => console.log("⚠️ Ошибка получения геопозиции:", error),
+            { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
         );
-   
-        return () => navigator.geolocation.clearWatch(watchId);
-    }, [map, userPlacemark, userCoords]);
-   
+    
+        setWatchId((prevId) => {
+            if (prevId) navigator.geolocation.clearWatch(prevId);
+            return id;
+        });
+    
+        return () => {
+            navigator.geolocation.clearWatch(id);
+        };
+    }, [map, routeReady, userPlacemark]);
+    
+
     // 🚀 Построение маршрута
     useEffect(() => {
         if (map && userCoords && cafeCoords && parkCoords && attractionsCoords && routeReady) {
@@ -155,18 +92,17 @@ const MapComponent = () => {
         }
     }, [map, userCoords, cafeCoords, parkCoords, attractionsCoords, routeReady]);
 
-    // 🔘 Кнопка "Построить маршрут"
-    const handleRouteReady = () => {
-        setRouteReady(true);
-    };
-
     return (
         <div>
             <div id="map" style={{ width: "100%", height: "400px" }} />
             <button
-                onClick={handleRouteReady}
-                disabled = {routeReady}
-                style = {{
+                onClick={() => {
+                    searchNearestPlaces(userCoords, map, setIsSearching, FindOptimalRoute, setCafeCoords, setParkCoords, setAttractionsCoords);
+                    setRouteReady(true); // Фиксируем положение пользователя
+                    if (watchId) navigator.geolocation.clearWatch(watchId); // Отключаем автообновление
+                }}
+                disabled={routeReady}
+                style={{
                     marginTop: '10px',
                     cursor: routeReady ? 'not-allowed' : 'pointer',
                     padding: "10px"
@@ -174,6 +110,12 @@ const MapComponent = () => {
             >
                 Построить маршрут
             </button>
+
+            <button onClick={() => setIstestOpen(true)} style={{marginLeft: '6px'}}>
+                Создать собственный маршрут
+            </button>
+            
+            {isTestOpen && <OriginalTest onClose={() => setIstestOpen(false)} />}
         </div>
     );
 };

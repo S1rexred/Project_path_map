@@ -1,132 +1,83 @@
 import ymaps from "ymaps";
 /**
-* @param {Array} a - Координаты первой точки [lat, lon].
-* @param {Array} b - Координаты второй точки [lat, lon].
-* @returns {number} - Расстояние между точками.
-*/
-
-const getDistance = (a, b) => {
-   return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
+ * Функция поиска ближайшего места.
+ * @param {Array} userCoords - Координаты пользователя [lat, lon].
+ * @param {Array} places - Массив координат мест [[lat, lon], ...].
+ * @returns {Array} - Координаты ближайшего места.
+ */
+export const getNearestPlace = (userCoords, places) => {
+    if (!userCoords || !Array.isArray(places) || places.length === 0) return null;
+    let nearestPlace = null;
+    let minDistance = Infinity;
+    places.forEach(place => {
+        if (!place || place.length < 2) return; // Проверяем валидность координат
+        const distance = Math.hypot(
+            userCoords[0] - place[0],
+            userCoords[1] - place[1]
+        );
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestPlace = place;
+        }
+    });
+    return nearestPlace;
 };
-
 /**
-* Генерация матрицы расстояний между всеми точками.
-* @param {Array} places - Массив координат точек [[lat, lon], ...].
-* @returns {Array} - Матрица расстояний.
-*/
-const generateDistanceMatrix = (places) => {
-   const n = places.length;
-   const matrix = Array.from({ length: n }, () => Array(n).fill(0));
-
-   for (let i = 0; i < n; i++) {
-       for (let j = 0; j < n; j++) {
-           if (i !== j) {
-               matrix[i][j] = getDistance(places[i], places[j]);
-           }
-       }
-   }
-   return matrix;
+ * Функция построения оптимального маршрута.
+ * @param {Array} userCoords - Координаты пользователя.
+ * @param {Array} places - Массив координат мест.
+ * @returns {Array} - Оптимизированный маршрут.
+ */
+export const getOptimizedRoute = (userCoords, places) => {
+    if (!Array.isArray(places) || places.length === 0) return [];
+    let route = [];
+    let currentCoords = userCoords;
+    let remainingPlaces = [...places];
+    while (remainingPlaces.length > 0) {
+        let nearest = getNearestPlace(currentCoords, remainingPlaces);
+        if (!nearest) break;
+        route.push(nearest);
+        currentCoords = nearest;
+        // Удаляем посещённое место по координатам, а не по ссылке
+        remainingPlaces = remainingPlaces.filter(place =>
+            place[0] !== nearest[0] || place[1] !== nearest[1]
+        );
+    }
+    return route;
 };
-
 /**
-* Муравьиный алгоритм для поиска оптимального маршрута.
-* @param {Array} places - Массив координат мест [[lat, lon], ...].
-* @param {number} ants - Количество муравьев.
-* @param {number} iterations - Количество итераций.
-* @param {number} alpha - Влияние феромонов.
-* @param {number} beta - Влияние расстояния.
-* @param {number} evaporation - Коэффициент испарения феромонов.
-* @returns {Array} - Оптимальный маршрут.
-*/
-const antColonyOptimization = (places, ants = 10, iterations = 100, alpha = 1, beta = 2, evaporation = 0.5) => {
-   const n = places.length;
-   const distanceMatrix = generateDistanceMatrix(places);
-   
-   // Инициализация феромонов (начальное значение 1)
-   let pheromones = Array.from({ length: n }, () => Array(n).fill(1));
+ * Функция построения маршрута на карте.
+ * @param {Array} userCoords - Координаты пользователя.
+ * @param {Array} places - Оптимизированный маршрут.
+ * @param {Object} map - Объект карты Яндекс.
+ */
+export const FindOptimalRoute = (userCoords, places, map) => {
+    if (!map || !userCoords || !Array.isArray(places) || places.length === 0) {
+        console.warn("⚠️ Невозможно построить маршрут. Недостаточно данных.");
+        return;
+    }
 
-   let bestRoute = [];
-   let bestDistance = Infinity;
+    // ✅ Исправлено: проверяем `places`, а не `optimizedRoute`
+    if (!Array.isArray(places) || places.length === 0) {
+        console.warn("⚠️ Оптимизированный маршрут пуст. Маршрут не строится.");
+        return;
+    }
 
-   for (let iter = 0; iter < iterations; iter++) {
-       let allRoutes = [];
-       let allDistances = [];
+    console.log("🛤️ Строим маршрут через:", places);
 
-       for (let ant = 0; ant < ants; ant++) {
-           let visited = new Set();
-           let route = [0]; // Начинаем с первой точки
-           visited.add(0);
-           let current = 0;
-           let distance = 0;
+    ymaps.load()
+        .then((ymapsInstance) => {
+            const multiRoute = new ymapsInstance.multiRouter.MultiRoute(
+                {
+                    referencePoints: [userCoords, ...places],
+                    params: { routingMode: "pedestrian" },
+                },
+                { boundsAutoApply: true }
+            );
 
-           while (route.length < n) {
-               let probabilities = [];
-               let sum = 0;
-
-               // Рассчитываем вероятности перехода
-               for (let j = 0; j < n; j++) {
-                   if (!visited.has(j)) {
-                       let pheromone = Math.pow(pheromones[current][j], alpha);
-                       let visibility = Math.pow(1 / distanceMatrix[current][j], beta);
-                       let probability = pheromone * visibility;
-                       probabilities.push({ index: j, probability });
-                       sum += probability;
-                   }
-               }
-
-               // Выбираем следующую точку
-               let r = Math.random() * sum;
-               let cumulative = 0;
-               let next = -1;
-               for (let option of probabilities) {
-                   cumulative += option.probability;
-                   if (cumulative >= r) {
-                       next = option.index;
-                       break;
-                   }
-               }
-
-               if (next !== -1) {
-                   visited.add(next);
-                   route.push(next);
-                   distance += distanceMatrix[current][next];
-                   current = next;
-               }
-           }
-
-           distance += distanceMatrix[current][0]; // Возвращаемся в начальную точку
-           route.push(0);
-           allRoutes.push(route);
-           allDistances.push(distance);
-
-           if (distance < bestDistance) {
-               bestDistance = distance;
-               bestRoute = route;
-           }
-       }
-
-       // Обновление феромонов
-       for (let i = 0; i < n; i++) {
-           for (let j = 0; j < n; j++) {
-               pheromones[i][j] *= (1 - evaporation);
-           }
-       }
-
-       for (let i = 0; i < allRoutes.length; i++) {
-           let route = allRoutes[i];
-           let routeDistance = allDistances[i];
-           let pheromoneDeposit = 1 / routeDistance;
-
-           for (let j = 0; j < route.length - 1; j++) {
-               let from = route[j];
-               let to = route[j + 1];
-               pheromones[from][to] += pheromoneDeposit;
-               pheromones[to][from] += pheromoneDeposit;
-           }
-       }
-   }
-
-   return bestRoute.map(index => places[index]);
+            console.log("✅ Маршрут построен");
+            map.geoObjects.removeAll();
+            map.geoObjects.add(multiRoute);
+        })
+        .catch((err) => console.error("❌ Ошибка загрузки маршрута:", err));
 };
-
-

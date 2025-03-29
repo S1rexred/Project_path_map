@@ -1,47 +1,48 @@
-export const SearchParks = async (userCoords, map, setCafeCoords) => {
+export const SearchParks = (userCoords, map, setParkCoords) => {
+    return new Promise((resolve, reject) => {
+
     if (!userCoords || !map) {
-        console.warn("⚠️ Не переданы координаты или карта!");
-        return null;
-    }
+        reject('Не переданы координаты или карта')
+        return
+    };
 
-    console.log("🔎 Ищем ближайший парка");
+    console.log("🔎 Ищем ближайший парк...");
 
-    // Удаляем старые поисковые контролы, если есть
     map.controls.each((control) => {
         if (control instanceof window.ymaps.control.SearchControl) {
             map.controls.remove(control);
         }
     });
-
+    
     const searchControl = new window.ymaps.control.SearchControl({
-        options: {
+        options: { 
             provider: "yandex#search",
             results: 1,
             boundedBy: [
                 [userCoords[0] - 0.01, userCoords[1] - 0.01],
                 [userCoords[0] + 0.01, userCoords[1] + 0.01]
             ]
-        }
+        },
     });
 
     map.controls.add(searchControl);
 
-    try {
-        await searchControl.search("парк");
+    searchControl.search("парк").then(() => {
         const results = searchControl.getResultsArray();
-
         if (!results || results.length === 0) {
-            console.warn("❌ Парк не найдена!");
-            return null;
+            console.warn("❌ Парк не найден!");
+            reject("❌ Парк не найдено!");
+            return;
         }
 
-        const nearestCafeCoords = results[0].geometry.getCoordinates();
-        console.log("✅ Найден ближайший парк:", nearestCafeCoords);
+        const nearestParkCoords = results[0].geometry.getCoordinates();
 
-        setCafeCoords(nearestCafeCoords);
-        return nearestCafeCoords;
-    } catch (error) {
-        console.error("❌ Ошибка при поиске парка:", error);
-        return null;
-    }
+        console.log("✅ Найден ближайший парк", nearestParkCoords);
+        setParkCoords(nearestParkCoords);
+        resolve(nearestParkCoords)
+    })
+    .catch((error) => {
+        console.error('Ошибка при поиске парка', error)
+        })
+    })
 };
