@@ -1,101 +1,83 @@
-import { SearchCafes } from "../searchPlace/SearchCafes";
-import { SearchParks } from "../searchPlace/SearchParks";
-import { SearchAttractions } from "../searchPlace/SearchAttractions";
-
-export const FindOptimalRoute = (userCoords, map, setCafeCoords, setParkCoords, setAttractionsCoords) => {
-    if (!userCoords || !map) return;
-
-    console.log("🚀 Начинаем поиск оптимального маршрута...");
-
-    Promise.all([
-        new Promise((resolve, reject) => {
-            console.log("🔍 Запускаем поиск кафе...");
-            try {
-                SearchCafes(userCoords, map, (cafes) => {
-                    console.log("✅ Найденные кафе:", cafes);
-                    if (!cafes || cafes.length === 0) {
-                        console.warn("❌ Кафе не найдены!");
-                        reject("Кафе не найдены");
-                        return;
-                    }
-                    resolve(cafes);
-                });
-            } catch (error) {
-                console.error("❌ Ошибка в SearchCafes:", error);
-                reject(error);
-            }
-        }),
-        new Promise((resolve, reject) => {
-            console.log("🔍 Запускаем поиск парков...");
-            try {
-                SearchParks(userCoords, map, (parks) => {
-                    console.log("✅ Найденные парки:", parks);
-                    if (!parks || parks.length === 0) {
-                        console.warn("❌ Парки не найдены!");
-                        reject("Парки не найдены");
-                        return;
-                    }
-                    resolve(parks);
-                });
-            } catch (error) {
-                console.error("❌ Ошибка в SearchParks:", error);
-                reject(error);
-            }
-        })
-    ])
-    .then(([foundCafes, foundParks]) => {
-        console.log("🔎 Начинаем анализ маршрута...");
-        let bestCafe = null;
-        let bestPark = null;
-        let minDistance = Infinity;
-
-        foundCafes.forEach((cafe) => {
-            foundParks.forEach((park) => {
-                const distance = calculateDistance(cafe, park);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    bestCafe = cafe;
-                    bestPark = park;
-                }
-            });
-        });
-
-        if (bestCafe && bestPark) {
-            console.log(`✅ Выбрано кафе: ${JSON.stringify(bestCafe)}, парк: ${JSON.stringify(bestPark)}`);
-            setCafeCoords(bestCafe);
-            setParkCoords(bestPark);
-
-            SearchAttractions(bestPark, map, (attraction) => {
-                if (attraction) {
-                    console.log(`🏛️ Выбрана достопримечательность: ${JSON.stringify(attraction)}`);
-                    setAttractionsCoords(attraction);
-                } else {
-                    console.warn("❌ Достопримечательности не найдены!");
-                }
-            });
-        } else {
-            console.warn("⚠️ Не удалось выбрать оптимальное кафе и парк!");
-        }
-    })
-    .catch((error) => console.error("❌ Ошибка при поиске кафе или парков:", error));
-};
-
+import ymaps from "ymaps";
 /**
- * Функция расчета расстояния между двумя точками (по формуле Хаверсина)
+ * Функция поиска ближайшего места.
+ * @param {Array} userCoords - Координаты пользователя [lat, lon].
+ * @param {Array} places - Массив координат мест [[lat, lon], ...].
+ * @returns {Array} - Координаты ближайшего места.
  */
-const calculateDistance = (point1, point2) => {
-    const toRad = (deg) => deg * (Math.PI / 180);
-    const R = 6371; // Радиус Земли в км
+export const getNearestPlace = (userCoords, places) => {
+    if (!userCoords || !Array.isArray(places) || places.length === 0) return null;
+    let nearestPlace = null;
+    let minDistance = Infinity;
+    places.forEach(place => {
+        if (!place || place.length < 2) return; // Проверяем валидность координат
+        const distance = Math.hypot(
+            userCoords[0] - place[0],
+            userCoords[1] - place[1]
+        );
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestPlace = place;
+        }
+    });
+    return nearestPlace;
+};
+/**
+ * Функция построения оптимального маршрута.
+ * @param {Array} userCoords - Координаты пользователя.
+ * @param {Array} places - Массив координат мест.
+ * @returns {Array} - Оптимизированный маршрут.
+ */
+export const getOptimizedRoute = (userCoords, places) => {
+    if (!Array.isArray(places) || places.length === 0) return [];
+    let route = [];
+    let currentCoords = userCoords;
+    let remainingPlaces = [...places];
+    while (remainingPlaces.length > 0) {
+        let nearest = getNearestPlace(currentCoords, remainingPlaces);
+        if (!nearest) break;
+        route.push(nearest);
+        currentCoords = nearest;
+        // Удаляем посещённое место по координатам, а не по ссылке
+        remainingPlaces = remainingPlaces.filter(place =>
+            place[0] !== nearest[0] || place[1] !== nearest[1]
+        );
+    }
+    return route;
+};
+/**
+ * Функция построения маршрута на карте.
+ * @param {Array} userCoords - Координаты пользователя.
+ * @param {Array} places - Оптимизированный маршрут.
+ * @param {Object} map - Объект карты Яндекс.
+ */
+export const FindOptimalRoute = (userCoords, places, map) => {
+    if (!map || !userCoords || !Array.isArray(places) || places.length === 0) {
+        console.warn("⚠️ Невозможно построить маршрут. Недостаточно данных.");
+        return;
+    }
 
-    const dLat = toRad(point2[0] - point1[0]);
-    const dLon = toRad(point2[1] - point1[1]);
+    // ✅ Исправлено: проверяем `places`, а не `optimizedRoute`
+    if (!Array.isArray(places) || places.length === 0) {
+        console.warn("⚠️ Оптимизированный маршрут пуст. Маршрут не строится.");
+        return;
+    }
 
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(point1[0])) * Math.cos(toRad(point2[0])) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    console.log("🛤️ Строим маршрут через:", places);
 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    ymaps.load()
+        .then((ymapsInstance) => {
+            const multiRoute = new ymapsInstance.multiRouter.MultiRoute(
+                {
+                    referencePoints: [userCoords, ...places],
+                    params: { routingMode: "pedestrian" },
+                },
+                { boundsAutoApply: true }
+            );
 
-    return R * c; // Возвращает расстояние в км
+            console.log("✅ Маршрут построен");
+            map.geoObjects.removeAll();
+            map.geoObjects.add(multiRoute);
+        })
+        .catch((err) => console.error("❌ Ошибка загрузки маршрута:", err));
 };

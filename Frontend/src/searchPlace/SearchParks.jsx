@@ -1,7 +1,12 @@
 export const SearchParks = (userCoords, map, setParkCoords) => {
-    if (!userCoords || !map) return;
+    return new Promise((resolve, reject) => {
 
-    console.log("🔎 Ищем ближайший парк..");
+    if (!userCoords || !map) {
+        reject('Не переданы координаты или карта')
+        return
+    };
+
+    console.log("🔎 Ищем ближайший парк...");
 
     map.controls.each((control) => {
         if (control instanceof window.ymaps.control.SearchControl) {
@@ -25,7 +30,8 @@ export const SearchParks = (userCoords, map, setParkCoords) => {
     searchControl.search("парк").then(() => {
         const results = searchControl.getResultsArray();
         if (!results || results.length === 0) {
-            console.warn("❌ Парк не найдено!");
+            console.warn("❌ Парк не найден!");
+            reject("❌ Парк не найдено!");
             return;
         }
 
@@ -33,8 +39,10 @@ export const SearchParks = (userCoords, map, setParkCoords) => {
 
         console.log("✅ Найден ближайший парк", nearestParkCoords);
         setParkCoords(nearestParkCoords);
+        resolve(nearestParkCoords)
     })
     .catch((error) => {
         console.error('Ошибка при поиске парка', error)
+        })
     })
 };

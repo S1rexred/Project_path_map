@@ -1,5 +1,10 @@
 export const SearchCafes = (userCoords, map, setCafeCoords) => {
-    if (!userCoords || !map) return;
+    return new Promise((resolve, reject) => {
+
+    if (!userCoords || !map) {
+        reject('Не переданы координаты или карта')
+        return
+    };
 
     console.log("🔎 Ищем ближайшее кафе...");
 
@@ -26,6 +31,7 @@ export const SearchCafes = (userCoords, map, setCafeCoords) => {
         const results = searchControl.getResultsArray();
         if (!results || results.length === 0) {
             console.warn("❌ Кафе не найдено!");
+            reject("❌ Кафе не найдено!");
             return;
         }
 
@@ -33,8 +39,10 @@ export const SearchCafes = (userCoords, map, setCafeCoords) => {
 
         console.log("✅ Найдено ближайшее кафе", nearestCafeCoords);
         setCafeCoords(nearestCafeCoords);
+        resolve(nearestCafeCoords)
     })
     .catch((error) => {
         console.error('Ошибка при поиске кафе', error)
+        })
     })
 };

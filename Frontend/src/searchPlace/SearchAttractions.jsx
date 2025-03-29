@@ -1,5 +1,10 @@
-export const SearchAttractions = (userCoords, map, setAttractionsCoords) => {
-    if (!userCoords || !map) return;
+export const SearchAttractions = (userCoords, map, setAttractionCoords) => {
+    return new Promise((resolve, reject) => {
+
+    if (!userCoords || !map) {
+        reject('Не переданы координаты или карта')
+        return
+    };
 
     console.log("🔎 Ищем ближайшую достопримечательность...");
 
@@ -25,16 +30,19 @@ export const SearchAttractions = (userCoords, map, setAttractionsCoords) => {
     searchControl.search("достопримечательность").then(() => {
         const results = searchControl.getResultsArray();
         if (!results || results.length === 0) {
-            console.warn("❌ Достопримечательность не найдено!");
+            console.warn("❌ Достопримечательность не найдена!");
+            reject("❌ Достопримечательность не найдена!");
             return;
         }
 
-        const nearestAttractionsCoordsCoords = results[0].geometry.getCoordinates();
+        const nearestAttractionCoords = results[0].geometry.getCoordinates();
 
-        console.log("✅ Найдена ближайшая достопримечательность", nearestAttractionsCoordsCoords);
-        setAttractionsCoords(nearestAttractionsCoordsCoords);
+        console.log("✅ Найдена ближайшая достопримечательность", nearestAttractionCoords);
+        setAttractionCoords(nearestAttractionCoords);
+        resolve(nearestAttractionCoords)
     })
     .catch((error) => {
         console.error('Ошибка при поиске достопримечательности', error)
+        })
     })
 };
