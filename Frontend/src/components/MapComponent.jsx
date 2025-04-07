@@ -5,7 +5,7 @@ import { FindOptimalRoute } from '../algoritms/FindOptimalRoute';
 import { searchNearestPlaces } from "../searchPlace/SearchNearestPlace";
 import OriginalTest from "../algoritms/tests/OriginalTest";
 
-const MapComponent = () => {
+const MapComponent = (answers) => {
     const [map, setMap] = useState(null);
     const [userCoords, setUserCoords] = useState(null);
     const [cafeCoords, setCafeCoords] = useState(null);
@@ -88,13 +88,13 @@ const MapComponent = () => {
     useEffect(() => {
         if (map && userCoords && cafeCoords && parkCoords && attractionsCoords && routeReady) {
             console.log("🛤️ Строим маршрут к кафе:", cafeCoords, "и к парку:", parkCoords, "и к достопримечательности", attractionsCoords);
-            BuildWalkingRoute(map, userCoords, cafeCoords, parkCoords, attractionsCoords);
+            BuildWalkingRoute(map, userCoords, cafeCoords, parkCoords, attractionsCoords, answers);
         }
     }, [map, userCoords, cafeCoords, parkCoords, attractionsCoords, routeReady]);
 
     return (
         <div>
-            <div id="map" style={{ width: "100%", height: "400px" }} />
+            <div id="map" style={{ width: "600px", height: "450px" }} />
             <button
                 onClick={() => {
                     searchNearestPlaces(userCoords, map, setIsSearching, FindOptimalRoute, setCafeCoords, setParkCoords, setAttractionsCoords);

@@ -1,13 +1,28 @@
-export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, attractionsCoords, userPlacemark) => {
-    if (!map || !userCoords || !cafeCoords) return;
+export const BuildWalkingRoute = (map, userCoords, places, userPlacemark, answers, cafeCoords, parkCoords, attractionsCoords) => {
+    if (!map || !userCoords || !places) return;
 
     ymaps.load().then((ymapsInstance) => {
         map.geoObjects.removeAll();
 
-        // маршрут
+        let referencePoints = [userCoords];
+
+        if (answers.cafe && answers.cafe !== "no") {
+            referencePoints.push(places.cafeCoords);
+        }
+
+        if (answers.preference === "parks") {
+            referencePoints.push(places.parkCoords);
+        } else {
+            referencePoints.push(places.street);
+        }
+
+        if (answers.routeLength === "long") {
+            referencePoints.push(places.attractionsCoords);
+        }
+
         const multiRoute = new ymapsInstance.multiRouter.MultiRoute(
             {
-                referencePoints: [userCoords, cafeCoords, parkCoords, attractionsCoords],
+                referencePoints: referencePoints,
                 params: { routingMode: "pedestrian" }
             },
             {
@@ -19,20 +34,18 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, attra
 
         map.geoObjects.add(multiRoute);
 
-        // Отслеживание движения пользователя
         navigator.geolocation.watchPosition(
             (position) => {
                 const newCoords = [position.coords.latitude, position.coords.longitude];
 
-                // Если пользователь ушёл на 10+ метров, перестраиваем маршрут
                 const distance = ymapsInstance.coordSystem.geo.getDistance(userCoords, newCoords);
                 if (distance > 10) {
                     console.log("Перестраиваем маршрут, пользователь сдвинулся:", newCoords);
                     userCoords = newCoords;
-                    multiRoute.model.setReferencePoints([newCoords, cafeCoords, parkCoords, attractionsCoords]);
+                    referencePoints[0] = newCoords;
+                    multiRoute.model.setReferencePoints(referencePoints);
                 }
 
-                // Обновляем метку пользователя
                 if (userPlacemark) {
                     userPlacemark.geometry.setCoordinates(newCoords);
                 }
@@ -41,4 +54,4 @@ export const BuildWalkingRoute = (map, userCoords, cafeCoords, parkCoords, attra
             { enableHighAccuracy: true, maximumAge: 30000, timeout: 30000 }
         );
     });
-}
+};
