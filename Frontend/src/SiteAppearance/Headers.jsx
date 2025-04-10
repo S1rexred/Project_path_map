@@ -5,6 +5,7 @@ const Headers = () => {
     const [darkMode, setDarkMode] = useState(
         localStorage.getItem('theme') === 'dark'
     )
+    const [menuOpen, setMenuOpen] = useState(false)
 
     useEffect(() => {
         if (darkMode) {
@@ -16,16 +17,25 @@ const Headers = () => {
         }
     }, [darkMode])
 
+    const toggleMenu = () => setMenuOpen(!menuOpen)
+
     return (
         <header className="header">
-            <img className="logo-photo" src={homie_logo} alt="Лого" />
-            <div className="logo">Гуляй везде</div>
-            <nav className="nav-links">
-                <a href="">Главная</a>
+            <div className="logo-container">
+                <img className="logo-photo" src={homie_logo} alt="Лого" />
+                <div className="logo">Гуляй везде</div>
+            </div>
+            <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
                 <a href="">Создать маршрут</a>
                 <a href="">Зарегестрироваться</a>
                 <a href="">Войти</a>
             </nav>
+
+            <div className="burger" onClick={toggleMenu}>
+                <div className={`line ${menuOpen ? 'open' : ''}`}></div>
+                <div className={`line ${menuOpen ? 'open' : ''}`}></div>
+                <div className={`line ${menuOpen ? 'open' : ''}`}></div>
+            </div>
             <label className="theme-switch">
                 <input
                 type="checkbox"
