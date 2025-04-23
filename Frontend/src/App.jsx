@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SingleRoute from './pathForSite/SingleRoute';
+import Registration from './pathForSite/Registration'
 import MainPage from './pathForSite/MainPage';
 import UserLocation from './components/UserLocation';
 import Headers from './SiteAppearance/Headers'
@@ -8,6 +9,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 const App = () => {
 
   const [map, setMap] = useState(null)
+  const [profiles, setProfiles] = useState([])
 
   return (
     <>
@@ -19,6 +21,7 @@ const App = () => {
       <Routes>
         <Route path='/' element={<MainPage/>}/>
         <Route path='single-route' element={<SingleRoute/>}/>
+        <Route path='регистрация' onSubmit={(data) => setProfiles([...profiles, data])} element={<Registration/>}/>
       </Routes>
     </div>
     </Router>

@@ -23,11 +23,12 @@ const Headers = () => {
         <header className="header">
             <div className="logo-container">
                 <img className="logo-photo" src={homie_logo} alt="Лого" />
-                <div className="logo">Гуляй везде</div>
+                <a href="/" className="logo-text">Гуляй везде</a>
             </div>
+
             <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
-                <a href="">Создать маршрут</a>
-                <a href="">Зарегестрироваться</a>
+                <a href="single-route">Создать маршрут</a>
+                <a href="регистрация">Зарегистрироваться</a>
                 <a href="">Войти</a>
             </nav>
 
@@ -36,11 +37,12 @@ const Headers = () => {
                 <div className={`line ${menuOpen ? 'open' : ''}`}></div>
                 <div className={`line ${menuOpen ? 'open' : ''}`}></div>
             </div>
+
             <label className="theme-switch">
                 <input
-                type="checkbox"
-                checked={darkMode}
-                onChange={() => setDarkMode(!darkMode)}
+                    type="checkbox"
+                    checked={darkMode}
+                    onChange={() => setDarkMode(!darkMode)}
                 />
                 <span className="slider">
                     <span className="icon-moon">🌙</span>

@@ -1,6 +1,5 @@
 import React from "react";
 import MapComponent from "../components/MapComponent";
-import Headers from "../SiteAppearance/Headers";
 
 const SingleRoute = () => {
     return (
