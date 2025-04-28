@@ -2,10 +2,13 @@ import { useState } from "react"
 
 const FindWalkPartner = ({ profiles = [] }) => {
     const [cityFilter, setCityFilter] = useState('')
-
+    const [showTimePircker, setShowTimePircker] = useState(false)
+    const [selectedTime, setSelectedTime] = useState('')
+    const [comment, setComment] = useState('')
     const filtered = (profiles || []).filter(p => p.city.toLowerCase().includes(cityFilter.toLowerCase()))
 
     return (
+    <div>
         <div className="find-partner-wrapper">
             <input 
             placeholder="Фильтр по городу"
@@ -26,11 +29,34 @@ const FindWalkPartner = ({ profiles = [] }) => {
                     <p><strong>Интересы: </strong>{profile.interests}</p>
                     <p><strong>О себе: </strong>{profile.about}</p>
                     <p style={{fontFamily: 'serif'}}>Подробнее...</p>
-                    <button className="button-profile">Предложить погулять</button>
+                    <button onClick={() => setShowTimePircker(true)} className="button-profile">Предложить погулять</button>
                 </div>
             ))}
             </div>
         </div>
+        {showTimePircker && (
+            <div className="time-picker-overlay">
+                <div className="time-picker-modal">
+                    <h1>Предложите время для прогулки</h1>
+                    <input
+                        type="time"
+                        value={selectedTime}
+                        onChange={(e) => setSelectedTime(e.target.value)}
+                    />
+                        <textarea
+                        className="comment-picker" 
+                        placeholder="Комментарий"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        />
+                        <div className="time-picker-buttons">
+                    <button onClick={() => setShowTimePircker(false)}>Отмена</button>
+                    <button onClick={() => setShowTimePircker(false)}>Отправить</button>
+                        </div>
+                </div>
+            </div>
+        )}
+    </div>
     )
 }
 
