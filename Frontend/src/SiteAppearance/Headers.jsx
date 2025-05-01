@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
 import homie_logo from '../img/homie_logo.png'
+import test_profile from '../img/test_profile.jpg'
 
 const Headers = () => {
     const [darkMode, setDarkMode] = useState(
@@ -55,7 +56,7 @@ const Headers = () => {
                 <a href="single-route">Создать маршрут</a>
                 {isAuth ? (
                     <div className="profile-wrapper" ref={profileRef}>
-                    <img src="" alt="" className="profile-icon"onClick={toogleProfileMenu}/>
+                    <img src={test_profile} alt="" className="profile-icon"onClick={toogleProfileMenu}/>
                     {profileMenuOpen && (
                         <div className="profile-menu">
                             <a href="Редактировать профиль"/>
