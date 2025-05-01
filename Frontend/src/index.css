@@ -183,12 +183,17 @@
   max-width: 600px;
   margin: 40px auto;
   padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
   background-color: var(--bg-color);
   color: var(--text-color);
   border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
+}
+
+.walk-form h2 {
+  text-align: center;
 }
 
 .form-input,
@@ -219,6 +224,107 @@
 
 .form-button:hover {
   background-color: red;
+}
+
+/* Form to login */
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.login-form {
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2rem;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.login-form h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--primary);
+}
+
+.login-form input {
+  width: 85%;
+  padding: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  background-color: #f0f0f0;
+}
+
+.login-form button {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #535bf2;
+  font-weight: 510;
+  font-size: 17px;
+}
+
+.register-link a {
+  font-size: 18px;
+  text-decoration: none;
+  color: var(--primary);
+}
+
+/* Profile-Icon */
+
+.profile-wrapper {
+  position: relative;
+}
+
+.profile-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.profile-menu {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 160px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.profile-menu a,
+.profile-menu button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px;
+  cursor: pointer;
+  color: inherit;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.profile-menu a:hover,
+.profile-menu button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Questionnaire */

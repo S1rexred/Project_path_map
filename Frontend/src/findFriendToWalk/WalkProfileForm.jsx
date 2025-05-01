@@ -21,6 +21,7 @@ const WalkProfileForm = () => {
 
       return (
         <form onSubmit={handleSubmit} className="walk-form">
+            <h2>Регистрация</h2>
             <input name="mail" placeholder="Введите свою почту" onChange={handleChange} className="form-input" />
             <input name="password" placeholder="Введите пароль" onChange={handleChange} className="form-input" />
             <input name="name" placeholder="Имя" onChange={handleChange} className="form-input" />
