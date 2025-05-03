@@ -59,7 +59,7 @@ const Headers = () => {
                     <img src={test_profile} alt="" className="profile-icon"onClick={toogleProfileMenu}/>
                     {profileMenuOpen && (
                         <div className="profile-menu">
-                            <a href="Редактировать профиль"/>
+                            <a href="Редактировать профиль">Редактировать профиль</a>
                             <label className="theme-switch">
                             <input
                                 type="checkbox"
