@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react"
 import homie_logo from '../img/homie_logo.png'
-import test_profile from '../img/test_profile.jpg'
+import '../styles/Headers/headers.css'
 
-const Headers = () => {
+const Headers = ({ img }) => {
     const [darkMode, setDarkMode] = useState(
         localStorage.getItem('theme') === 'dark'
     )
@@ -20,7 +20,18 @@ const Headers = () => {
             localStorage.setItem('theme', 'light')
         }
     }, [darkMode])
+    
+    useEffect(() => {
+        const checkAuth = () => {
+            setIsAuth(localStorage.getItem('auth') === 'true')
+        }
 
+        checkAuth()
+        window.addEventListener('storage', checkAuth)
+
+        return () => window.removeEventListener('storage', checkAuth)
+    }, [])
+    
     useEffect(() => {
         setIsAuth(localStorage.getItem('auth') === 'true')
 
@@ -53,13 +64,21 @@ const Headers = () => {
             </div>
 
             <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
-                <a href="single-route">Создать маршрут</a>
-                {isAuth ? (
+                <a href="/single-route">Создать маршрут</a>
+                {!isAuth && (
+                    <>
+                    <a href="/registration">Зарегистрироваться</a>
+                    <a href="/login">Войти</a>
+                    </>
+                )}
+            </nav>
+
+                {isAuth && (
                     <div className="profile-wrapper" ref={profileRef}>
-                    <img src={test_profile} alt="" className="profile-icon"onClick={toogleProfileMenu}/>
+                    { img && <img src={img} alt="иконка-профиля" className="profile-icon"onClick={toogleProfileMenu}/>}
                     {profileMenuOpen && (
                         <div className="profile-menu">
-                            <a href="Редактировать профиль">Редактировать профиль</a>
+                            <a href="/edit">Редактировать профиль</a>
                             <label className="theme-switch">
                             <input
                                 type="checkbox"
@@ -75,14 +94,7 @@ const Headers = () => {
                         </div>
                     )}
                     </div>
-                ) : (
-                    <>
-                    <a href="регистрация">Зарегистрироваться</a>
-                    <a href="Вход">Войти</a>
-                    </>
                 )}
-                
-            </nav>
 
             <div className="burger" onClick={toggleMenu}>
                 <div className={`line ${menuOpen ? 'open' : ''}`}></div>
