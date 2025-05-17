@@ -64,9 +64,21 @@ const Headers = ({ img }) => {
             </div>
 
             <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
-                <a href="/single-route">Создать маршрут</a>
+                
                 {!isAuth && (
                     <>
+                    <label className="theme-switch">
+                            <input
+                                type="checkbox"
+                                checked={darkMode}
+                                onChange={() => setDarkMode(!darkMode)}
+                            />
+                            <span className="slider">
+                                <span className="icon-moon">🌙</span>
+                                <span className="icon-sun">☀️</span>
+                            </span>
+                            </label>
+                    <a href="/single-route">Создать маршрут</a>
                     <a href="/registration">Зарегистрироваться</a>
                     <a href="/login">Войти</a>
                     </>

@@ -15,6 +15,17 @@
   color: var(--text-color);
 }
 
+.dark-quest {
+  --bg-color: #2f8e3b;
+  --text-color: #8a3838;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+body.dark-quest {
+  background-color: #2f8e3b;
+}
+
 /* Questionnaire */
 
 .find-partner-wrapper {
