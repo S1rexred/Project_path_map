@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import FindWalkPartner from "../findFriendToWalk/FindWalkPartner"
-import Home from "../SiteAppearance/Home"
-
+import Home from "../siteAppearance/Home"
+import Notifications from "../utils/Notifications"
 const MainPage = () => {
     const [profiles, setProfiles] = useState([])
     const [isAuth, setIsAuth] = useState(false)
@@ -61,6 +61,7 @@ const MainPage = () => {
                 <>
                 <h2>Найди себе человека для гулянки</h2>
                  <FindWalkPartner profiles={profiles} />
+                 <Notifications/>
                 </>
             ) : (
                <div>

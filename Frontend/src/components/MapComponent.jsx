@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import ymaps from "ymaps";
 import { BuildWalkingRoute } from "../routes/BuildRouteWalking";
-import { FindOptimalRoute } from '../algoritms/FindOptimalRoute';
+import { FindOptimalRoute } from '../algorithms/FindOptimalRoute';
 import { searchNearestPlaces } from "../searchPlace/SearchNearestPlace";
-import OriginalTest from "../algoritms/tests/OriginalTest";
+import OriginalTest from "../algorithms/tests/OriginalTest";
 
 const MapComponent = (answers) => {
     const [map, setMap] = useState(null);
@@ -22,9 +22,10 @@ const MapComponent = (answers) => {
         if (map !== null) return;
 
         console.log("🌍 Создается карта...");
+        console.log(import.meta.env.YANDEX_API_KEY)
         ymaps
             .load(
-                "https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=3e97ca53-6fe6-4f83-92e8-625dc2b8f2c4",
+                `https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=${import.meta.env.VITE_YANDEX_API_KEY}`,
             )
             .then((ymapsInstance) => {
                 const newMap = new ymapsInstance.Map("map", {

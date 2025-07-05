@@ -25,14 +25,17 @@ app.use(session({
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
-const login = require('./routes/login')
+const login = require('./controllers/login')
 app.use('/login', login)
 
 const usersRouter = require('./routes/users')
 app.use('/api/users', usersRouter)
 
-const registerRoute = require('./routes/register')
+const registerRoute = require('./controllers/register')
 app.use('/api/register', registerRoute)
+
+const walk_requests = require('./controllers/walkRequest')
+app.use('/api/walkRequest', walk_requests)
 
 // Статические файлы из сборки React
 const frontendPath = path.resolve(__dirname, '..', 'Frontend', 'dist');
@@ -58,6 +61,14 @@ app.get('/login', (req, res) => {
 app.get('/edit', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
+
+app.get('/api/notifications', (res, req) => {
+  const email = req.session?.email
+  if (!email) return res.statusCode(401).json({ error: 'not logged in'})
+
+    const userNotifications = notifications.filter(n => n.to_email === email)
+    res.json(userNotifications)
+})
 
 // Запуск сервера
 app.listen(PORT, () => {

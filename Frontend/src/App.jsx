@@ -4,7 +4,7 @@ import Registration from './pathForSite/Registration'
 import Authorisation from './pathForSite/Authorisation';
 import MainPage from './pathForSite/MainPage';
 import UserLocation from './components/UserLocation';
-import Headers from './SiteAppearance/Headers'
+import Headers from './siteAppearance/Headers'
 import './index.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 const App = () => {
@@ -31,7 +31,7 @@ const App = () => {
         setIsAuth(false)
       })
   }, [])
-
+ 
   useEffect(() => {
     const fetchProfile = async () => {
       try {

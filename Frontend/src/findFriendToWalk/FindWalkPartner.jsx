@@ -5,9 +5,39 @@ const FindWalkPartner = ({ profiles = [] }) => {
     const [showTimePicker, setShowTimePicker] = useState(false)
     const [selectedTime, setSelectedTime] = useState('')
     const [comment, setComment] = useState('')
+    const [receiverEmail, setReceiverEmail] = useState('')
 
     // безопасная фильтрация по sity
     const filtered = profiles.filter(p => (p.sity || '').toLowerCase().includes(cityFilter.toLowerCase()))
+
+    const handleSendRequst = async (to_email) => {
+        const fromEmail = localStorage.getItem('email')
+        const request = {
+            from_email: fromEmail,
+            to_email: receiverEmail,
+            proposed_time: selectedTime,
+            comment
+        }
+
+        try {
+            const response = await fetch('http://localhost:3001/api/walkRequest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify(request)
+            })
+
+            const result = await response.json()
+
+            if (response.ok) {
+                alert(result.message || 'Предложение отправлено!')
+            } else {
+                alert('Ошибка: ' + result.message)
+            }
+        } catch (error) {
+            alert('Ошибка сервера')
+        }
+    }
+    
 
     return (
         <div>
@@ -31,7 +61,10 @@ const FindWalkPartner = ({ profiles = [] }) => {
                             <p><strong>Интересы: </strong>{p.interests}</p>
                             <p><strong>О себе: </strong>{p.about}</p>
                             <p style={{fontFamily: 'serif'}}>Подробнее...</p>
-                            <button onClick={() => setShowTimePicker(true)} className="button-profile">Предложить погулять</button>
+                            <button onClick={() => {
+                                setReceiverEmail(p.email)
+                                setShowTimePicker(true)
+                            }} className="button-profile">Предложить погулять</button>
                         </div>
                     ))}
                 </div>
@@ -54,7 +87,10 @@ const FindWalkPartner = ({ profiles = [] }) => {
                         />
                         <div className="time-picker-buttons">
                             <button onClick={() => setShowTimePicker(false)}>Отмена</button>
-                            <button onClick={() => setShowTimePicker(false)}>Отправить</button>
+                            <button onClick={() => {
+                                handleSendRequst(receiverEmail) 
+                                setShowTimePicker(false)
+                                }}>Отправить</button>
                         </div>
                     </div>
                 </div>

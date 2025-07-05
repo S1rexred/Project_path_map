@@ -1,7 +1,7 @@
 import { SearchCafes } from "./SearchCafes";
 import { SearchParks } from "./SearchParks";
 import { SearchAttractions } from "./SearchAttractions";
-import { getOptimizedRoute } from "../algoritms/FindOptimalRoute";
+import { getOptimizedRoute } from "../algorithms/FindOptimalRoute";
 
 export const searchNearestPlaces = async (coords, map, setIsSearching, FindOptimalRoute, setCafeCoords, setParkCoords, setAttractionsCoords) => {
     if (!coords || !map) {

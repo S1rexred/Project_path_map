@@ -66,8 +66,8 @@ const Headers = ({ img }) => {
             <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
                 
                 {!isAuth && (
-                    <>
-                    <label className="theme-switch">
+                    <div>
+                        <label className="theme-switch" style={{marginRight: '30px'}}>
                             <input
                                 type="checkbox"
                                 checked={darkMode}
@@ -77,16 +77,17 @@ const Headers = ({ img }) => {
                                 <span className="icon-moon">🌙</span>
                                 <span className="icon-sun">☀️</span>
                             </span>
-                            </label>
-                    <a href="/single-route">Создать маршрут</a>
-                    <a href="/registration">Зарегистрироваться</a>
-                    <a href="/login">Войти</a>
-                    </>
+                        </label>
+                    <a style={{marginRight: '27px'}} href="/single-route">Создать маршрут</a>
+                    <a style={{marginRight: '27px'}} href="/registration">Зарегистрироваться</a>
+                    <a style={{marginRight: '27px'}} href="/login">Войти</a>
+                    </div>
                 )}
             </nav>
 
                 {isAuth && (
                     <div className="profile-wrapper" ref={profileRef}>
+                        <a style={{marginRight: '27px'}} href="/single-route">Создать маршрут</a>
                     { img && <img src={img} alt="иконка-профиля" className="profile-icon"onClick={toogleProfileMenu}/>}
                     {profileMenuOpen && (
                         <div className="profile-menu">
