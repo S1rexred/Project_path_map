@@ -1,5 +1,5 @@
 # 🚀 Project Map Path
-
+# RU
 Приложение для построения пешеходных маршрутов, поиска друзей для прогулок и совместного планирования маршрутов.
 
 ---
@@ -35,7 +35,7 @@
 git clone https://github.com/S1rexred/Project_path_map.git
 cd Project_path_map
 ```
-
+# EN
 An app for building walking routes, finding friends for walks, and planning joint routes together.
 
 ---
