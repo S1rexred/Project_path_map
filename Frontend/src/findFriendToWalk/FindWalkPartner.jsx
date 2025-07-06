@@ -7,7 +7,7 @@ const FindWalkPartner = ({ profiles = [] }) => {
     const [comment, setComment] = useState('')
     const [receiverEmail, setReceiverEmail] = useState('')
 
-    // безопасная фильтрация по sity
+    // фильтрация по sity
     const filtered = profiles.filter(p => (p.sity || '').toLowerCase().includes(cityFilter.toLowerCase()))
 
     const handleSendRequst = async (to_email) => {
